@@ -1,0 +1,45 @@
+version: '3'
+
+services:
+  app:
+    image: quay.io/keycloak/keycloak:15.0.2
+    container_name: ms-auth
+    environment:
+      - KEYCLOAK_USER=admin
+      - KEYCLOAK_PASSWORD=ksi@2021x1
+      - DB_ADDR=db
+      - DB_VENDOR=mysql
+      - DB_DATABASE=ms-auth
+      - DB_PORT=3306
+      - DB_USER=root
+      - DB_PASSWORD=root
+    ports:
+      - 8080:8080
+    volumes:
+      - ./frontend/build/kingspanisoeste:/opt/jboss/keycloak/themes/kingspanisoeste
+      - ./keycloak/config/standalone-ha.xml:/opt/jboss/keycloak/standalone/configuration/standalone-ha.xml
+    depends_on:
+      - db
+
+  db:
+    build: ./.docker/mysql
+    container_name: ms-auth-db
+    restart: always
+    tty: true
+    ports:
+      - '33006:3306'
+    volumes:
+      - ./.docker/dbdata:/var/lib/mysql
+    environment:
+      - MYSQL_DATABASE=ms-auth
+      - MYSQL_ROOT_PASSWORD=root
+      - MYSQL_USER=root
+
+  frontend:
+    build: ./frontend
+    entrypoint: ./.docker/entrypoint.sh
+    container_name: ms-auth-frontend
+    volumes:
+      - ./frontend:/home/node/app
+    networks:
+      - default
